@@ -99,6 +99,13 @@ a {
   width: 100%;
 }
 
+.eyebrow {
+  margin-bottom: 10px;
+  color: var(--accent);
+  font-size: 15px;
+  font-weight: 900;
+}
+
 h1,
 h2,
 h3,
@@ -143,6 +150,23 @@ p {
   display: flex;
   flex-wrap: wrap;
   gap: 14px;
+}
+
+.badge-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.badge-row span {
+  padding: 6px 10px;
+  border: 1px solid rgba(16, 123, 118, 0.2);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .button {
@@ -220,12 +244,28 @@ p {
 }
 
 .service-grid article,
+.proof-grid article,
 .pricing article,
 .contact-card {
   background: var(--paper);
   border: 1px solid var(--line);
   border-radius: 8px;
   padding: 26px;
+}
+
+.case-strip,
+.deliverables {
+  background: #fff;
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.proof-grid article {
+  min-height: 180px;
 }
 
 .split {
@@ -340,6 +380,7 @@ footer p {
   }
 
   .service-grid,
+  .proof-grid,
   .pricing {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -383,6 +424,7 @@ footer p {
   }
 
   .service-grid,
+  .proof-grid,
   .pricing {
     grid-template-columns: 1fr;
   }
