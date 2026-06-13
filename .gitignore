@@ -1,0 +1,8 @@
+# Local Codex automation output
+codex/知识库Skill/ai-enterprise-growth-monitor/logs/
+codex/知识库Skill/ai-enterprise-growth-monitor/raw/
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/

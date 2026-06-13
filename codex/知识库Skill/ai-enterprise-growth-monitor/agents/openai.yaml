@@ -1,0 +1,7 @@
+interface:
+  display_name: "AI Enterprise Growth Monitor"
+  short_description: "Track AI delivery and growth knowledge."
+  default_prompt: "Use $ai-enterprise-growth-monitor to refresh and apply the local AI delivery and growth knowledge base."
+
+policy:
+  allow_implicit_invocation: true

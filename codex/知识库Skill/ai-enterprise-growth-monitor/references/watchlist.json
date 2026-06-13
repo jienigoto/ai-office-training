@@ -1,0 +1,42 @@
+{
+  "repositories": [
+    "openai/openai-cookbook",
+    "modelcontextprotocol/servers",
+    "langchain-ai/langchain",
+    "run-llama/llama_index",
+    "microsoft/autogen",
+    "microsoft/ai-agents-for-beginners",
+    "crewAIInc/crewAI",
+    "google-gemini/cookbook",
+    "browser-use/browser-use",
+    "mem0ai/mem0"
+  ],
+  "search_queries": [
+    "enterprise AI agent RAG MCP workflow automation",
+    "AI application delivery agent evaluation cookbook",
+    "AI agent enterprise implementation examples",
+    "short video automation AI creator operations",
+    "AI lead generation sales automation outbound",
+    "AI customer acquisition growth automation"
+  ],
+  "priority_keywords": [
+    "enterprise",
+    "agent",
+    "agents",
+    "rag",
+    "mcp",
+    "workflow",
+    "evaluation",
+    "eval",
+    "deployment",
+    "automation",
+    "sales",
+    "lead",
+    "outbound",
+    "growth",
+    "creator",
+    "short video",
+    "content"
+  ],
+  "notes": "Edit this file to add the exact GitHub projects and topics the user wants monitored."
+}
