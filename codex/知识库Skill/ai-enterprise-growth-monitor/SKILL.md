@@ -51,6 +51,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "D:\Code\codex\知识库Skil
 
 The local Windows scheduled task is named `Codex-GitHub-AI-Knowledge-03`. It runs daily at 03:00 local Windows time and executes `scripts/update-github-knowledge.ps1`.
 
+Each run writes a digest where every monitored repository and discovery result includes:
+
+- `使用功能`: what the project can be used for
+- `作用`: how it helps enterprise AI delivery, short-video operations, customer acquisition, or Codex Skill growth
+
+After updating the local D-drive knowledge base, the script syncs the tracked skill files into `D:\Code\ai-office-training\codex\知识库Skill\ai-enterprise-growth-monitor`, commits any changes, and pushes them to `origin/main`. Runtime logs and raw API snapshots stay local.
+
 To inspect the task:
 
 ```powershell

@@ -1,8 +1,10 @@
-param(
+﻿param(
     [string]$SkillRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path,
     [int]$SearchPerQuery = 8,
     [int]$CommitPerRepo = 8,
-    [int]$ReleasePerRepo = 3
+    [int]$ReleasePerRepo = 3,
+    [string]$AutoPushRepoRoot = "D:\Code\ai-office-training",
+    [switch]$SkipAutoPush
 )
 
 $ErrorActionPreference = "Stop"
@@ -42,6 +44,137 @@ function Get-KeywordScore {
 function ConvertTo-SafeFileName {
     param([string]$Name)
     return ($Name -replace "[^a-zA-Z0-9._-]", "_")
+}
+
+function Get-UseExplanation {
+    param(
+        [string]$Name,
+        [string]$Description,
+        [string]$Query,
+        [string[]]$Keywords
+    )
+
+    $text = "$Name $Description $Query".ToLowerInvariant()
+    $function = "跟踪该项目的最新文档、示例、release 和 commit，判断是否能沉淀为可复用的 AI 办公/企业交付能力。"
+    $impact = "用于补充本地 Codex Skill 的案例库、交付检查清单和项目方案素材。"
+
+    if ($text -match "browser|web|网页|automation") {
+        $function = "用于浏览器自动化、网页任务执行、表单操作、资料采集和端到端流程自动执行。"
+        $impact = "可用于企业内部系统自动操作、获客资料收集、竞品调研、网页工作流机器人和短视频运营后台自动化。"
+    }
+    elseif ($text -match "crew|autogen|agent|agents|multi-agent") {
+        $function = "用于构建多智能体协作流程，让不同角色的 AI 分工完成研究、执行、复核和交付。"
+        $impact = "可沉淀为企业 AI 项目的交付流水线，例如需求分析、方案生成、自动质检、客户交付材料生成。"
+    }
+    elseif ($text -match "rag|llama|index|document|ocr|retrieval") {
+        $function = "用于文档知识库、RAG 检索、OCR、企业资料问答和知识型应用搭建。"
+        $impact = "适合做企业私有知识库、培训资料问答、合同/制度/产品手册检索和 AI 办公助理。"
+    }
+    elseif ($text -match "memory|mem0|记忆") {
+        $function = "用于给 AI agent 增加长期记忆、用户偏好记忆和跨会话上下文管理。"
+        $impact = "可提升企业助手、销售助手、运营助手的连续服务能力，让系统记住客户背景和项目历史。"
+    }
+    elseif ($text -match "mcp|server|tool") {
+        $function = "用于扩展 AI 工具调用能力，把外部系统、API、文件、数据库或工作台连接给 Codex/agent 使用。"
+        $impact = "可作为企业 AI 落地的集成层，把 CRM、知识库、自动化脚本和内部服务接入 AI 工作流。"
+    }
+    elseif ($text -match "cookbook|example|beginner|training|lesson") {
+        $function = "用于学习最新 AI 应用范式、代码样例、最佳实践和教学型项目结构。"
+        $impact = "可转化为 AI 办公培训课程、交付模板、演示案例和团队内部 SOP。"
+    }
+    elseif ($text -match "video|creator|content|short") {
+        $function = "用于短视频内容生产、素材处理、脚本生成、发布流程或创作者运营自动化。"
+        $impact = "可补充短视频运营 Skill，形成选题、脚本、批量生产、数据复盘和矩阵号运营方法。"
+    }
+    elseif ($text -match "sales|lead|growth|outbound|customer|acquisition") {
+        $function = "用于销售线索发现、获客自动化、外呼/外联流程、增长实验和漏斗优化。"
+        $impact = "可补充获客 Skill，形成从线索采集、触达话术、跟进节奏到成交转化的自动化 SOP。"
+    }
+
+    if ($Keywords -and (Get-KeywordScore "$Name $Description $Query" $Keywords) -ge 3) {
+        $impact = "$impact 优先级较高，建议人工复核后加入可执行交付清单。"
+    }
+
+    [pscustomobject]@{
+        function = $function
+        impact = $impact
+    }
+}
+
+function Sync-ToGitHubRepo {
+    param(
+        [string]$SourceSkillRoot,
+        [string]$RepoRoot,
+        [string]$Today
+    )
+
+    if (-not (Test-Path $RepoRoot)) {
+        Write-Log "Auto push skipped: repo root not found: $RepoRoot"
+        return
+    }
+
+    $gitDir = Join-Path $RepoRoot ".git"
+    if (-not (Test-Path $gitDir)) {
+        Write-Log "Auto push skipped: not a git repository: $RepoRoot"
+        return
+    }
+
+    $repoStatus = (& git -C $RepoRoot status --porcelain)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "Auto push skipped: git status failed in $RepoRoot"
+        return
+    }
+    if ($repoStatus) {
+        Write-Log "Auto push skipped: target repository has existing local changes."
+        return
+    }
+
+    & git -C $RepoRoot pull --ff-only origin main | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "Auto push skipped: git pull --ff-only failed."
+        return
+    }
+
+    $targetSkillRoot = Join-Path $RepoRoot "codex\知识库Skill\ai-enterprise-growth-monitor"
+    New-Item -ItemType Directory -Force -Path $targetSkillRoot | Out-Null
+
+    foreach ($name in @("SKILL.md", "agents", "knowledge", "references", "scripts")) {
+        $source = Join-Path $SourceSkillRoot $name
+        $target = Join-Path $targetSkillRoot $name
+        if (Test-Path $target) { Remove-Item -LiteralPath $target -Recurse -Force }
+        Copy-Item -LiteralPath $source -Destination $target -Recurse -Force
+    }
+
+    & git -C $RepoRoot add "README.md" ".gitignore" "codex/知识库Skill/ai-enterprise-growth-monitor/SKILL.md" "codex/知识库Skill/ai-enterprise-growth-monitor/agents/openai.yaml" "codex/知识库Skill/ai-enterprise-growth-monitor/knowledge" "codex/知识库Skill/ai-enterprise-growth-monitor/references" "codex/知识库Skill/ai-enterprise-growth-monitor/scripts/update-github-knowledge.ps1"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "Auto push skipped: git add failed."
+        return
+    }
+
+    $staged = (& git -C $RepoRoot diff --cached --name-only)
+    if (-not $staged) {
+        Write-Log "Auto push: no GitHub changes to commit."
+        return
+    }
+
+    $userName = (& git -C $RepoRoot config user.name)
+    if (-not $userName) { & git -C $RepoRoot config user.name "Codex Automation" | Out-Null }
+    $userEmail = (& git -C $RepoRoot config user.email)
+    if (-not $userEmail) { & git -C $RepoRoot config user.email "codex@local" | Out-Null }
+
+    & git -C $RepoRoot commit -m "Update Codex AI knowledge digest $Today" | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "Auto push skipped: git commit failed."
+        return
+    }
+
+    & git -C $RepoRoot push origin main | Out-Null
+    if ($LASTEXITCODE -ne 0) {
+        Write-Log "Auto push failed: git push failed."
+        return
+    }
+
+    Write-Log "Auto push completed for $RepoRoot."
 }
 
 $ReferencesDir = Join-Path $SkillRoot "references"
@@ -91,6 +224,7 @@ foreach ($repo in @($watchlist.repositories)) {
             ($releases | ForEach-Object { $_.name; $_.body }) -join " ",
             ($commits | ForEach-Object { $_.commit.message }) -join " "
         ) -join " "
+        $explanation = Get-UseExplanation $repo $repoInfo.description "" $priorityKeywords
 
         $repoFindings.Add([pscustomobject]@{
             repo = $repo
@@ -99,6 +233,8 @@ foreach ($repo in @($watchlist.repositories)) {
             pushed_at = $repoInfo.pushed_at
             stars = $repoInfo.stargazers_count
             keyword_score = Get-KeywordScore $summaryText $priorityKeywords
+            use_function = $explanation.function
+            use_impact = $explanation.impact
             releases = @($releases | Select-Object -First $ReleasePerRepo | ForEach-Object {
                 [pscustomobject]@{ name = $_.name; tag = $_.tag_name; url = $_.html_url; published_at = $_.published_at }
             })
@@ -122,6 +258,7 @@ foreach ($query in @($watchlist.search_queries)) {
 
         foreach ($item in @($search.items)) {
             $text = "$($item.full_name) $($item.description) $($item.topics -join ' ')"
+            $explanation = Get-UseExplanation $item.full_name $item.description $query $priorityKeywords
             $searchFindings.Add([pscustomobject]@{
                 query = $query
                 repo = $item.full_name
@@ -130,6 +267,8 @@ foreach ($query in @($watchlist.search_queries)) {
                 pushed_at = $item.pushed_at
                 stars = $item.stargazers_count
                 keyword_score = Get-KeywordScore $text $priorityKeywords
+                use_function = $explanation.function
+                use_impact = $explanation.impact
             })
         }
     }
@@ -162,6 +301,8 @@ foreach ($item in $topRepos | Select-Object -First 10) {
     $lines.Add("- Last pushed: $($item.pushed_at)")
     $lines.Add("- Relevance score: $($item.keyword_score)")
     if ($item.description) { $lines.Add("- Description: $($item.description)") }
+    $lines.Add("- 使用功能: $($item.use_function)")
+    $lines.Add("- 作用: $($item.use_impact)")
     if (@($item.releases).Count -gt 0) {
         $lines.Add("- Recent releases:")
         foreach ($release in @($item.releases)) {
@@ -183,6 +324,8 @@ $lines.Add("")
 foreach ($item in $topSearch) {
     $lines.Add("- [$($item.repo)]($($item.url)) | stars: $($item.stars) | score: $($item.keyword_score) | query: $($item.query)")
     if ($item.description) { $lines.Add("  - $($item.description)") }
+    $lines.Add("  - 使用功能: $($item.use_function)")
+    $lines.Add("  - 作用: $($item.use_impact)")
 }
 $lines.Add("")
 $lines.Add("## Delivery Implications To Review")
@@ -212,4 +355,8 @@ if ($existingIndex -notmatch [regex]::Escape($entry)) {
 }
 
 Write-Log "Completed GitHub knowledge update. Digest: $digestPath"
+if (-not $SkipAutoPush) {
+    Sync-ToGitHubRepo -SourceSkillRoot $SkillRoot -RepoRoot $AutoPushRepoRoot -Today $today
+}
 Write-Output $digestPath
+
