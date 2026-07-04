@@ -31,3 +31,4 @@ No daily digests have been generated yet.
 - 2026-07-02: [GitHub AI Knowledge Digest](./2026-07-02-github-ai-knowledge.md)
 - 2026-07-03: [GitHub AI Knowledge Digest](./2026-07-03-github-ai-knowledge.md)
 - 2026-07-04: [GitHub AI Knowledge Digest](./2026-07-04-github-ai-knowledge.md)
+- 2026-07-05: [GitHub AI Knowledge Digest](./2026-07-05-github-ai-knowledge.md)
